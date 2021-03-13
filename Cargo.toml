@@ -1,0 +1,24 @@
+[package]
+name = "certify"
+version = "0.1.0"
+authors = ["Tyr Chen <tyr.chen@gmail.com>"]
+edition = "2018"
+license = "MIT"
+documentation = "https://docs.rs/certify"
+repository = "https://github.com/tyrchen/certify"
+homepage = "https://github.com/tyrchen/certify"
+description = """
+Generate client cert with CA cert
+"""
+readme = "README.md"
+categories = ["development-tools"]
+keywords = ["x509", "certificate"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = "0.4"
+pem = "0.8"
+rcgen = {version = "0.8", features = ['x509-parser']}
+thiserror = "1"
+x509-parser = "0.9"
+yasna = { version = "0.3", features = ["bit-vec"] }
