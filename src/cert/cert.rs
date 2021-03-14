@@ -1,6 +1,7 @@
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use rcgen::{
-    BasicConstraints, Certificate, CertificateParams, CustomExtension, ExtendedKeyUsagePurpose::*,
-    IsCa, KeyIdMethod,
+    BasicConstraints, Certificate, CertificateParams, CustomExtension, DistinguishedName, DnType,
+    ExtendedKeyUsagePurpose::*, IsCa, KeyIdMethod, KeyPair, SanType, PKCS_ED25519,
 };
 use std::net::IpAddr;
 
@@ -79,11 +80,12 @@ pub enum CertType {
 }
 
 impl Params {
-    fn build_cert_params(&self, cert_type: CertType) -> CertificateParams {
-        use chrono::{DateTime, Duration, NaiveDateTime, Utc};
-        use rcgen::{DistinguishedName, DnType, SanType, PKCS_ECDSA_P256_SHA256};
-
-        let alg = &PKCS_ECDSA_P256_SHA256;
+    fn build_cert_params(
+        &self,
+        keypair: Option<KeyPair>,
+        cert_type: CertType,
+    ) -> CertificateParams {
+        let alg = &PKCS_ED25519;
         let now = Utc::now().timestamp();
 
         let default_days = if cert_type == CertType::CA {
@@ -110,6 +112,7 @@ impl Params {
         distinguished_name.push(DnType::CommonName, &self.common);
 
         let mut params = CertificateParams::default();
+        params.key_pair = keypair;
         params.alg = alg;
         params.not_before = not_before;
         params.not_after = not_after;
@@ -140,19 +143,19 @@ impl Params {
         params
     }
 
-    pub fn ca_cert(&self) -> Result<CA, CertifyError> {
-        let mut params = self.build_cert_params(CertType::CA);
+    pub fn ca_cert(&self, keypair: Option<KeyPair>) -> Result<CA, CertifyError> {
+        let mut params = self.build_cert_params(keypair, CertType::CA);
         params.extended_key_usages = vec![];
         CA::from_params(params)
     }
 
-    pub fn client_cert(&self) -> Result<Cert, CertifyError> {
-        let params = self.build_cert_params(CertType::Client);
+    pub fn client_cert(&self, keypair: Option<KeyPair>) -> Result<Cert, CertifyError> {
+        let params = self.build_cert_params(keypair, CertType::Client);
         Cert::from_params(params)
     }
 
-    pub fn server_cert(&self) -> Result<Cert, CertifyError> {
-        let params = self.build_cert_params(CertType::Server);
+    pub fn server_cert(&self, keypair: Option<KeyPair>) -> Result<Cert, CertifyError> {
+        let params = self.build_cert_params(keypair, CertType::Server);
         Cert::from_params(params)
     }
 
