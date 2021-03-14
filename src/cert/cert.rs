@@ -43,6 +43,7 @@ impl Cert {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct CertInfo {
     pub domain_names: Vec<String>,
     pub ip_address: Vec<IpAddr>,
