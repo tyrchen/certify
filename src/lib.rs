@@ -1,8 +1,7 @@
 mod cert;
 mod error;
 
-use cert::{Params, CA};
-
+pub use cert::{CertInfo, CA};
 pub use error::CertifyError;
 
 // re-exports
@@ -22,7 +21,7 @@ pub fn generate_ca<'a>(
     pem_str: Option<&str>,
     days: Option<i64>,
 ) -> Result<(String, String), CertifyError> {
-    let params = Params::new(domains, &[], country, org, cn, days);
+    let params = CertInfo::new(domains, &[], country, org, cn, days);
     let keypair = match pem_str {
         Some(v) => Some(KeyPair::from_pem(v)?),
         None => None,
@@ -42,7 +41,7 @@ pub fn generate_cert<'a>(
     is_client: bool,
     days: Option<i64>,
 ) -> Result<(String, String), CertifyError> {
-    let params = Params::new(domains, &[], country, org, cn, days);
+    let params = CertInfo::new(domains, &[], country, org, cn, days);
     let keypair = match pem_str {
         Some(v) => Some(KeyPair::from_pem(v)?),
         None => None,

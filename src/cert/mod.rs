@@ -2,4 +2,4 @@ mod ca;
 mod cert;
 
 pub use ca::CA;
-pub use cert::{Cert, Params};
+pub use cert::{Cert, CertInfo};

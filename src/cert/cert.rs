@@ -43,7 +43,7 @@ impl Cert {
     }
 }
 
-pub struct Params {
+pub struct CertInfo {
     pub domain_names: Vec<String>,
     pub ip_address: Vec<IpAddr>,
     pub country: String,
@@ -52,7 +52,7 @@ pub struct Params {
     pub days: Option<i64>,
 }
 
-impl Params {
+impl CertInfo {
     pub fn new<'a, 'b>(
         domains: impl AsRef<[&'a str]>,
         ips: impl AsRef<[&'b str]>,
@@ -79,7 +79,7 @@ pub enum CertType {
     CA,
 }
 
-impl Params {
+impl CertInfo {
     fn build_cert_params(
         &self,
         keypair: Option<KeyPair>,
@@ -126,17 +126,17 @@ impl Params {
             CertType::CA => {
                 params.extended_key_usages = vec![Any];
                 params.is_ca = IsCa::Ca(BasicConstraints::Constrained(16));
-                params.custom_extensions.push(Params::key_usage(true));
+                params.custom_extensions.push(CertInfo::key_usage(true));
             }
             CertType::Client => {
                 params.extended_key_usages = vec![ClientAuth];
-                params.custom_extensions.push(Params::not_ca());
-                params.custom_extensions.push(Params::key_usage(false));
+                params.custom_extensions.push(CertInfo::not_ca());
+                params.custom_extensions.push(CertInfo::key_usage(false));
             }
             CertType::Server => {
                 params.extended_key_usages = vec![ServerAuth];
-                params.custom_extensions.push(Params::not_ca());
-                params.custom_extensions.push(Params::key_usage(false));
+                params.custom_extensions.push(CertInfo::not_ca());
+                params.custom_extensions.push(CertInfo::key_usage(false));
             }
         }
 
