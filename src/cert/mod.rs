@@ -1,5 +1,5 @@
+mod builder;
 mod ca;
-mod cert;
 
+pub use builder::{Cert, CertInfo};
 pub use ca::CA;
-pub use cert::{Cert, CertInfo};

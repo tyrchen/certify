@@ -31,6 +31,7 @@ pub fn generate_ca<'a>(
 }
 
 /// generate cert signed by the CA
+#[allow(clippy::too_many_arguments)]
 pub fn generate_cert<'a>(
     ca: &CA,
     domains: impl AsRef<[&'a str]>,

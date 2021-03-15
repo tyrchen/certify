@@ -9,7 +9,7 @@ let (cert_pem, key_pem) = generate_cert(&ca, &[], "US", "web", "abcd1234", true,
 
 ## License
 
-`prost-helper` is distributed under the terms of MIT.
+`certify` is distributed under the terms of MIT.
 
 See [LICENSE](LICENSE.md) for details.
 
