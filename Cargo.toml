@@ -1,6 +1,6 @@
 [package]
 name = "certify"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Tyr Chen <tyr.chen@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -20,5 +20,5 @@ chrono = "0.4"
 pem = "0.8"
 rcgen = {version = "0.8", features = ['x509-parser']}
 thiserror = "1"
-x509-parser = "0.9"
-yasna = { version = "0.3", features = ["bit-vec"] }
+x509-parser = "0.12"
+yasna = { version = "0.4", features = ["bit-vec"] }
