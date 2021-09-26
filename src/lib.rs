@@ -1,7 +1,7 @@
 mod cert;
 mod error;
 
-pub use cert::{CertInfo, CA};
+pub use cert::{CertInfo, CertType, CA};
 pub use error::CertifyError;
 
 // re-exports
@@ -115,7 +115,7 @@ mod tests {
         let ca_pem = include_str!("fixtures/ca_cert.pem");
         let server_key_pem = include_str!("fixtures/server_key.pem");
 
-        let ca = load_ca(&ca_pem, &key_pem)?;
+        let ca = load_ca(ca_pem, key_pem)?;
         let (server_cert, server_key) = generate_cert(
             &ca,
             &["app.domain.com"],
@@ -159,7 +159,7 @@ mod tests {
         let ca_pem = include_str!("fixtures/ca_cert.pem");
         let client_key_pem = include_str!("fixtures/client_key.pem");
 
-        let ca = load_ca(&ca_pem, &key_pem)?;
+        let ca = load_ca(ca_pem, key_pem)?;
 
         let (client_cert, client_key) = generate_cert(
             &ca,
