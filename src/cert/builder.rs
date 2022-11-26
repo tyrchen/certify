@@ -1,6 +1,7 @@
 use rcgen::{
     BasicConstraints, Certificate, CertificateParams, CustomExtension, DistinguishedName, DnType,
-    ExtendedKeyUsagePurpose::*, IsCa, KeyIdMethod, KeyPair, SanType, PKCS_ED25519,
+    ExtendedKeyUsagePurpose::*, IsCa, KeyIdMethod, KeyPair, SanType, SignatureAlgorithm,
+    PKCS_ECDSA_P384_SHA384, PKCS_ED25519,
 };
 use std::net::IpAddr;
 use time::{Duration, OffsetDateTime};
@@ -51,24 +52,36 @@ pub struct CertInfo {
     pub organization: String,
     pub common: String,
     pub days: Option<i64>,
+    pub sig_algo: CertSigAlgo,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CertSigAlgo {
+    EcDsa,
+    ED25519,
 }
 
 impl CertInfo {
-    pub fn new<'a, 'b>(
-        domains: impl AsRef<[&'a str]>,
-        ips: impl AsRef<[&'b str]>,
+    pub fn new(
+        domains: Vec<impl Into<String>>,
+        ips: Vec<impl Into<String>>,
         country: &str,
         org: &str,
         cn: &str,
         days: Option<i64>,
+        sig_algo: CertSigAlgo,
     ) -> Self {
         Self {
-            domain_names: domains.as_ref().iter().map(|d| d.to_string()).collect(),
-            ip_address: ips.as_ref().iter().map(|ip| ip.parse().unwrap()).collect(),
+            domain_names: domains.into_iter().map(|d| d.into()).collect(),
+            ip_address: ips
+                .into_iter()
+                .map(|ip| ip.into().parse().unwrap())
+                .collect(),
             country: country.to_owned(),
             organization: org.to_owned(),
             common: cn.to_owned(),
             days,
+            sig_algo,
         }
     }
 }
@@ -86,7 +99,7 @@ impl CertInfo {
         keypair: Option<KeyPair>,
         cert_type: CertType,
     ) -> CertificateParams {
-        let alg = &PKCS_ED25519;
+        let alg = self.sig_algo.into();
 
         let default_days = if cert_type == CertType::CA {
             CA_DEFAULT_DURATION
@@ -182,5 +195,14 @@ impl CertInfo {
         });
 
         CustomExtension::from_oid_content(OID_BASIC, der)
+    }
+}
+
+impl From<CertSigAlgo> for &SignatureAlgorithm {
+    fn from(algo: CertSigAlgo) -> Self {
+        match algo {
+            CertSigAlgo::EcDsa => &PKCS_ECDSA_P384_SHA384,
+            CertSigAlgo::ED25519 => &PKCS_ED25519,
+        }
     }
 }

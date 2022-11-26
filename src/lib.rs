@@ -1,27 +1,30 @@
 mod cert;
 mod error;
 
-pub use cert::{CertInfo, CertType, CA};
+pub use cert::{CertInfo, CertSigAlgo, CertType, CA};
 pub use error::CertifyError;
 
 // re-exports
 pub use rcgen::KeyPair;
 
-/// load CA with cert string and key string
-pub fn load_ca(cert: &str, key: &str) -> Result<CA, CertifyError> {
-    CA::from_pem(cert, key)
-}
-
 /// Generate CA cert
-pub fn generate_ca<'a>(
-    domains: impl AsRef<[&'a str]>,
+pub fn generate_ca(
     country: &str,
     org: &str,
     cn: &str,
+    sig_algo: CertSigAlgo,
     pem_str: Option<&str>,
     days: Option<i64>,
 ) -> Result<(String, String), CertifyError> {
-    let params = CertInfo::new(domains, [], country, org, cn, days);
+    let params = CertInfo::new(
+        Vec::<String>::new(),
+        Vec::<String>::new(),
+        country,
+        org,
+        cn,
+        days,
+        sig_algo,
+    );
     let keypair = match pem_str {
         Some(v) => Some(KeyPair::from_pem(v)?),
         None => None,
@@ -32,17 +35,26 @@ pub fn generate_ca<'a>(
 
 /// generate cert signed by the CA
 #[allow(clippy::too_many_arguments)]
-pub fn generate_cert<'a>(
+pub fn generate_cert(
     ca: &CA,
-    domains: impl AsRef<[&'a str]>,
+    domains: Vec<impl Into<String>>,
     country: &str,
     org: &str,
     cn: &str,
+    sig_algo: CertSigAlgo,
     pem_str: Option<&str>,
     is_client: bool,
     days: Option<i64>,
 ) -> Result<(String, String), CertifyError> {
-    let params = CertInfo::new(domains, [], country, org, cn, days);
+    let params = CertInfo::new(
+        domains,
+        vec!["127.0.0.1", "::1"],
+        country,
+        org,
+        cn,
+        days,
+        sig_algo,
+    );
     let keypair = match pem_str {
         Some(v) => Some(KeyPair::from_pem(v)?),
         None => None,
@@ -63,7 +75,7 @@ mod tests {
     #[test]
     fn generate_ca_cert_should_work() -> Result<(), CertifyError> {
         let (cert, key) = gen_ca(None)?;
-        let ca = load_ca(&cert, &key)?;
+        let ca = CA::load(&cert, &key)?;
         let cert1 = ca.serialize_pem()?;
 
         assert_eq!(cert, cert1);
@@ -75,13 +87,13 @@ mod tests {
         let key_pem = include_str!("fixtures/ca_key.pem");
         let ca_pem = include_str!("fixtures/ca_cert.pem");
         let (cert, key) = gen_ca(Some(key_pem))?;
-        let ca = load_ca(&cert, &key)?;
+        let ca = CA::load(&cert, &key)?;
         let cert1 = ca.serialize_pem()?;
 
         assert_eq!(cert, cert1);
         assert_eq!(key_pem, key);
 
-        let ca = load_ca(ca_pem, &key)?;
+        let ca = CA::load(ca_pem, &key)?;
         let cert2 = ca.serialize_pem()?;
 
         assert_eq!(ca_pem, cert2);
@@ -92,13 +104,14 @@ mod tests {
     #[test]
     fn generate_server_cert_with_ca_should_work() -> Result<(), CertifyError> {
         let (cert, key) = gen_ca(None)?;
-        let ca = load_ca(&cert, &key)?;
+        let ca = CA::load(&cert, &key)?;
         let (server_cert, server_key) = generate_cert(
             &ca,
-            ["app.domain.com"],
+            vec!["app.domain.com"],
             "US",
             "Domain Domain Inc.",
             "API Server",
+            CertSigAlgo::ED25519,
             None,
             false,
             Some(365),
@@ -115,13 +128,14 @@ mod tests {
         let ca_pem = include_str!("fixtures/ca_cert.pem");
         let server_key_pem = include_str!("fixtures/server_key.pem");
 
-        let ca = load_ca(ca_pem, key_pem)?;
+        let ca = CA::load(ca_pem, key_pem)?;
         let (server_cert, server_key) = generate_cert(
             &ca,
-            ["app.domain.com"],
+            vec!["app.domain.com"],
             "US",
             "Domain Domain Inc.",
             "API Server",
+            CertSigAlgo::ED25519,
             Some(server_key_pem),
             false,
             Some(365),
@@ -136,13 +150,14 @@ mod tests {
     #[test]
     fn generate_client_cert_with_ca_should_work() -> Result<(), CertifyError> {
         let (cert, key) = gen_ca(None)?;
-        let ca = load_ca(&cert, &key)?;
+        let ca = CA::load(&cert, &key)?;
         let (client_cert, client_key) = generate_cert(
             &ca,
-            ["app.domain.com"],
+            vec!["app.domain.com"],
             "CA",
             "macos",
             "awesome_device_id",
+            CertSigAlgo::ED25519,
             None,
             true,
             Some(365),
@@ -159,14 +174,15 @@ mod tests {
         let ca_pem = include_str!("fixtures/ca_cert.pem");
         let client_key_pem = include_str!("fixtures/client_key.pem");
 
-        let ca = load_ca(ca_pem, key_pem)?;
+        let ca = CA::load(ca_pem, key_pem)?;
 
         let (client_cert, client_key) = generate_cert(
             &ca,
-            ["app.domain.com"],
+            vec!["app.domain.com"],
             "CA",
             "macos",
             "awesome_device_id",
+            CertSigAlgo::ED25519,
             Some(client_key_pem),
             true,
             Some(365),
@@ -180,10 +196,10 @@ mod tests {
 
     fn gen_ca(pem: Option<&str>) -> Result<(String, String), CertifyError> {
         generate_ca(
-            ["domain.com"],
             "US",
             "Domain Domain Inc.",
             "Domain CA",
+            CertSigAlgo::ED25519,
             pem,
             None,
         )

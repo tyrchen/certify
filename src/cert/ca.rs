@@ -9,7 +9,7 @@ pub struct CA {
 }
 
 impl CA {
-    pub fn from_pem(ca_cert: &str, ca_key: &str) -> Result<Self, CertifyError> {
+    pub fn load(ca_cert: &str, ca_key: &str) -> Result<Self, CertifyError> {
         let key = KeyPair::from_pem(ca_key)?;
         let params = CertificateParams::from_ca_cert_pem(ca_cert, key)?;
         let ca_data = pem::parse(ca_cert)?.contents;
