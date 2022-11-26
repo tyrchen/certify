@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-- Use time crate not chrono crate ([9b6a6f9](9b6a6f93c39461f7bff9cef837cd7559363dee1a) - 2022-11-26 by Tyr Chen)
+- Use time crate not chrono crate ([c9dc20b](c9dc20b797c8e405e3fe938166eb56036293a185) - 2022-11-26 by Tyr Chen)
 
 ### Miscellaneous Tasks
 
