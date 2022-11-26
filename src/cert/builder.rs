@@ -1,9 +1,9 @@
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use rcgen::{
     BasicConstraints, Certificate, CertificateParams, CustomExtension, DistinguishedName, DnType,
     ExtendedKeyUsagePurpose::*, IsCa, KeyIdMethod, KeyPair, SanType, PKCS_ED25519,
 };
 use std::net::IpAddr;
+use time::{Duration, OffsetDateTime};
 
 use super::CA;
 use crate::CertifyError;
@@ -73,7 +73,7 @@ impl CertInfo {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CertType {
     Client,
     Server,
@@ -87,7 +87,6 @@ impl CertInfo {
         cert_type: CertType,
     ) -> CertificateParams {
         let alg = &PKCS_ED25519;
-        let now = Utc::now().timestamp();
 
         let default_days = if cert_type == CertType::CA {
             CA_DEFAULT_DURATION
@@ -96,7 +95,7 @@ impl CertInfo {
         };
         let days = self.days.unwrap_or(default_days);
 
-        let not_before = DateTime::<Utc>::from_utc(NaiveDateTime::from_timestamp(now, 0), Utc);
+        let not_before = OffsetDateTime::now_utc();
 
         let not_after = not_before + Duration::days(days);
 

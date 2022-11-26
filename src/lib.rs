@@ -21,7 +21,7 @@ pub fn generate_ca<'a>(
     pem_str: Option<&str>,
     days: Option<i64>,
 ) -> Result<(String, String), CertifyError> {
-    let params = CertInfo::new(domains, &[], country, org, cn, days);
+    let params = CertInfo::new(domains, [], country, org, cn, days);
     let keypair = match pem_str {
         Some(v) => Some(KeyPair::from_pem(v)?),
         None => None,
@@ -42,7 +42,7 @@ pub fn generate_cert<'a>(
     is_client: bool,
     days: Option<i64>,
 ) -> Result<(String, String), CertifyError> {
-    let params = CertInfo::new(domains, &[], country, org, cn, days);
+    let params = CertInfo::new(domains, [], country, org, cn, days);
     let keypair = match pem_str {
         Some(v) => Some(KeyPair::from_pem(v)?),
         None => None,
@@ -95,7 +95,7 @@ mod tests {
         let ca = load_ca(&cert, &key)?;
         let (server_cert, server_key) = generate_cert(
             &ca,
-            &["app.domain.com"],
+            ["app.domain.com"],
             "US",
             "Domain Domain Inc.",
             "API Server",
@@ -118,7 +118,7 @@ mod tests {
         let ca = load_ca(ca_pem, key_pem)?;
         let (server_cert, server_key) = generate_cert(
             &ca,
-            &["app.domain.com"],
+            ["app.domain.com"],
             "US",
             "Domain Domain Inc.",
             "API Server",
@@ -139,7 +139,7 @@ mod tests {
         let ca = load_ca(&cert, &key)?;
         let (client_cert, client_key) = generate_cert(
             &ca,
-            &["app.domain.com"],
+            ["app.domain.com"],
             "CA",
             "macos",
             "awesome_device_id",
@@ -163,7 +163,7 @@ mod tests {
 
         let (client_cert, client_key) = generate_cert(
             &ca,
-            &["app.domain.com"],
+            ["app.domain.com"],
             "CA",
             "macos",
             "awesome_device_id",
@@ -180,7 +180,7 @@ mod tests {
 
     fn gen_ca(pem: Option<&str>) -> Result<(String, String), CertifyError> {
         generate_ca(
-            &["domain.com"],
+            ["domain.com"],
             "US",
             "Domain Domain Inc.",
             "Domain CA",
