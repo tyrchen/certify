@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.5.1] - 2022-11-26
+
+[c9dc20b](c9dc20b797c8e405e3fe938166eb56036293a185)...[b91f245](b91f2458cbd9d56d17461930aa4b20386a5e31ba)
+
+### Features
+
+- Allow client to choose which sig algo to use (osx keychain does not support ed25519 yet) ([b91f245](b91f2458cbd9d56d17461930aa4b20386a5e31ba) - 2022-11-26 by Tyr Chen)
+
+## [0.5.0] - 2022-11-26
+
+[e2631f6](e2631f602e8c5c94fba46c280491c287e883ffe9)...[c9dc20b](c9dc20b797c8e405e3fe938166eb56036293a185)
 
 ### Bug Fixes
 
