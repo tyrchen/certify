@@ -1,6 +1,6 @@
 [package]
 name = "certify"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["Tyr Chen <tyr.chen@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -18,7 +18,7 @@ keywords = ["x509", "certificate"]
 [dependencies]
 pem = "1.1.0"
 rcgen = { version = "0.10.0", features = ['x509-parser'] }
-thiserror = "1.0.37"
+thiserror = "1.0.38"
 time = "0.3.17"
 x509-parser = "0.14.0"
-yasna = { version = "0.5.0", features = ["bit-vec"] }
+yasna = { version = "0.5.1", features = ["bit-vec"] }
