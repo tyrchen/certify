@@ -12,7 +12,7 @@ impl CA {
     pub fn load(ca_cert: &str, ca_key: &str) -> Result<Self, CertifyError> {
         let key = KeyPair::from_pem(ca_key)?;
         let params = CertificateParams::from_ca_cert_pem(ca_cert, key)?;
-        let ca_data = pem::parse(ca_cert)?.contents;
+        let ca_data = pem::parse(ca_cert)?.into_contents();
         let mut result = Self::from_params(params)?;
         result.data = Some(ca_data);
         Ok(result)
@@ -39,10 +39,7 @@ impl CA {
     }
 
     pub fn serialize_pem(&self) -> Result<String, CertifyError> {
-        let p = pem::Pem {
-            tag: "CERTIFICATE".to_string(),
-            contents: self.serialize_der()?,
-        };
+        let p = pem::Pem::new("CERTIFICATE", self.serialize_der()?);
         Ok(pem::encode(&p))
     }
 
