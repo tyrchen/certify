@@ -5,7 +5,9 @@ use thiserror::Error;
 pub enum CertifyError {
     // detailed errors
     #[error("Rcgen error: {0}")]
-    RcgenError(#[from] rcgen::RcgenError),
+    RcgenError(#[from] rcgen::Error),
     #[error("PEM error: {0}")]
     PemError(#[from] pem::PemError),
+    #[error("Invalid certificate")]
+    InvalidCertificate,
 }

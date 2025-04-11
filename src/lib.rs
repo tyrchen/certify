@@ -26,8 +26,8 @@ pub fn generate_ca(
         sig_algo,
     );
     let keypair = match pem_str {
-        Some(v) => Some(KeyPair::from_pem(v)?),
-        None => None,
+        Some(v) => KeyPair::from_pem(v)?,
+        None => KeyPair::generate_for(sig_algo.into())?,
     };
     let ca = params.ca_cert(keypair)?;
     Ok((ca.serialize_pem().unwrap(), ca.serialize_private_key_pem()))
@@ -56,8 +56,8 @@ pub fn generate_cert(
         sig_algo,
     );
     let keypair = match pem_str {
-        Some(v) => Some(KeyPair::from_pem(v)?),
-        None => None,
+        Some(v) => KeyPair::from_pem(v)?,
+        None => KeyPair::generate_for(sig_algo.into())?,
     };
     let cert = if is_client {
         params.client_cert(keypair)?
@@ -91,7 +91,7 @@ mod tests {
         let cert1 = ca.serialize_pem()?;
 
         assert_eq!(cert, cert1);
-        assert_eq!(key_pem, key);
+        assert_eq!(strip_pem(key_pem), key);
 
         let ca = CA::load(ca_pem, &key)?;
         let cert2 = ca.serialize_pem()?;
@@ -141,12 +141,13 @@ mod tests {
             Some(365),
         )?;
 
-        assert_eq!(&server_key, server_key_pem);
+        assert_eq!(server_key, strip_pem(server_key_pem));
 
         println!("{}\n{}", server_cert, server_key);
 
         Ok(())
     }
+
     #[test]
     fn generate_client_cert_with_ca_should_work() -> Result<(), CertifyError> {
         let (cert, key) = gen_ca(None)?;
@@ -188,7 +189,7 @@ mod tests {
             Some(365),
         )?;
 
-        assert_eq!(&client_key, client_key_pem);
+        assert_eq!(client_key, strip_pem(client_key_pem));
         println!("{}\n{}", client_cert, client_key);
 
         Ok(())
@@ -203,6 +204,11 @@ mod tests {
             pem,
             None,
         )
+    }
+
+    // make \r\n to \n
+    fn strip_pem(pem: &str) -> String {
+        pem.replace("\r\n", "\n")
     }
 
     // fn write_file(name: &str, content: &str) {

@@ -1,40 +1,46 @@
-use rcgen::{Certificate, CertificateParams, KeyPair};
-
 use super::Cert;
 use crate::CertifyError;
+use rcgen::{CertificateParams, KeyPair};
 
 pub struct CA {
-    cert: Certificate,
+    cert: Cert,
     data: Option<Vec<u8>>,
 }
 
 impl CA {
     pub fn load(ca_cert: &str, ca_key: &str) -> Result<Self, CertifyError> {
         let key = KeyPair::from_pem(ca_key)?;
-        let params = CertificateParams::from_ca_cert_pem(ca_cert, key)?;
+        let params = CertificateParams::from_ca_cert_pem(ca_cert)?;
         let ca_data = pem::parse(ca_cert)?.into_contents();
-        let mut result = Self::from_params(params)?;
+        let mut result = Self::from_params(params, key)?;
         result.data = Some(ca_data);
         Ok(result)
     }
 
-    pub fn from_params(params: CertificateParams) -> Result<Self, CertifyError> {
-        Ok(CA {
-            cert: Certificate::from_params(params)?,
-            data: None,
-        })
+    pub fn from_params(params: CertificateParams, keypair: KeyPair) -> Result<Self, CertifyError> {
+        let cert = Cert::from_params(params, keypair)?;
+        Ok(CA { cert, data: None })
     }
 
     pub fn sign_cert(&self, cert: &Cert) -> Result<(String, String), CertifyError> {
-        let cert_pem = cert.0.serialize_pem_with_signer(&self.cert)?;
-        let key_pem = cert.0.serialize_private_key_pem();
+        let keypair = &cert.keypair;
+
+        let signed_cert =
+            cert.inner
+                .params()
+                .clone()
+                .signed_by(keypair, &self.cert.inner, &self.cert.keypair)?;
+
+        let cert_pem = signed_cert.pem();
+        let key_pem = keypair.serialize_pem();
+
         Ok((cert_pem, key_pem))
     }
 
     pub fn serialize_der(&self) -> Result<Vec<u8>, CertifyError> {
         match &self.data {
             Some(data) => Ok(data.to_owned()),
-            None => Ok(self.cert.serialize_der()?),
+            None => Ok(self.cert.inner.der().to_vec()),
         }
     }
 
@@ -44,6 +50,6 @@ impl CA {
     }
 
     pub fn serialize_private_key_pem(&self) -> String {
-        self.cert.serialize_private_key_pem()
+        self.cert.keypair.serialize_pem()
     }
 }

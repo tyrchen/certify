@@ -1,8 +1,9 @@
 use rcgen::{
     BasicConstraints, Certificate, CertificateParams, CustomExtension, DistinguishedName, DnType,
     ExtendedKeyUsagePurpose::*, IsCa, KeyIdMethod, KeyPair, SanType, SignatureAlgorithm,
-    PKCS_ECDSA_P384_SHA384, PKCS_ED25519,
+    PKCS_ECDSA_P256_SHA256, PKCS_ED25519,
 };
+use std::convert::TryInto;
 use std::net::IpAddr;
 use time::{Duration, OffsetDateTime};
 
@@ -33,14 +34,21 @@ const KEY_USAGE: &[Usage] = &[
     Usage::None,
 ];
 
-pub struct Cert(pub Certificate);
+pub struct Cert {
+    pub(crate) inner: Certificate,
+    pub(crate) keypair: KeyPair,
+}
 
 const CERT_DEFAULT_DURATION: i64 = 180; // 180 days
 const CA_DEFAULT_DURATION: i64 = 10 * 365; // approx 10 years
 
 impl Cert {
-    pub fn from_params(params: CertificateParams) -> Result<Self, CertifyError> {
-        Ok(Cert(Certificate::from_params(params)?))
+    pub fn from_params(params: CertificateParams, keypair: KeyPair) -> Result<Self, CertifyError> {
+        let cert = params.self_signed(&keypair)?;
+        Ok(Cert {
+            inner: cert,
+            keypair,
+        })
     }
 }
 
@@ -94,13 +102,7 @@ pub enum CertType {
 }
 
 impl CertInfo {
-    fn build_cert_params(
-        &self,
-        keypair: Option<KeyPair>,
-        cert_type: CertType,
-    ) -> CertificateParams {
-        let alg = self.sig_algo.into();
-
+    fn build_cert_params(&self, cert_type: CertType) -> CertificateParams {
         let default_days = if cert_type == CertType::CA {
             CA_DEFAULT_DURATION
         } else {
@@ -114,10 +116,10 @@ impl CertInfo {
 
         let mut subject_alt_names = vec![];
         for dns in self.domain_names.iter() {
-            subject_alt_names.push(SanType::DnsName(dns.to_owned()));
+            subject_alt_names.push(SanType::DnsName(dns.clone().try_into().unwrap()));
         }
         for ip in self.ip_address.iter() {
-            subject_alt_names.push(SanType::IpAddress(ip.to_owned()));
+            subject_alt_names.push(SanType::IpAddress(*ip));
         }
         let mut distinguished_name = DistinguishedName::new();
         distinguished_name.push(DnType::CountryName, &self.country);
@@ -125,8 +127,6 @@ impl CertInfo {
         distinguished_name.push(DnType::CommonName, &self.common);
 
         let mut params = CertificateParams::default();
-        params.key_pair = keypair;
-        params.alg = alg;
         params.not_before = not_before;
         params.not_after = not_after;
         params.subject_alt_names = subject_alt_names;
@@ -156,20 +156,20 @@ impl CertInfo {
         params
     }
 
-    pub fn ca_cert(&self, keypair: Option<KeyPair>) -> Result<CA, CertifyError> {
-        let mut params = self.build_cert_params(keypair, CertType::CA);
+    pub fn ca_cert(&self, keypair: KeyPair) -> Result<CA, CertifyError> {
+        let mut params = self.build_cert_params(CertType::CA);
         params.extended_key_usages = vec![];
-        CA::from_params(params)
+        CA::from_params(params, keypair)
     }
 
-    pub fn client_cert(&self, keypair: Option<KeyPair>) -> Result<Cert, CertifyError> {
-        let params = self.build_cert_params(keypair, CertType::Client);
-        Cert::from_params(params)
+    pub fn client_cert(&self, keypair: KeyPair) -> Result<Cert, CertifyError> {
+        let params = self.build_cert_params(CertType::Client);
+        Cert::from_params(params, keypair)
     }
 
-    pub fn server_cert(&self, keypair: Option<KeyPair>) -> Result<Cert, CertifyError> {
-        let params = self.build_cert_params(keypair, CertType::Server);
-        Cert::from_params(params)
+    pub fn server_cert(&self, keypair: KeyPair) -> Result<Cert, CertifyError> {
+        let params = self.build_cert_params(CertType::Server);
+        Cert::from_params(params, keypair)
     }
 
     fn key_usage(ca: bool) -> CustomExtension {
@@ -198,10 +198,10 @@ impl CertInfo {
     }
 }
 
-impl From<CertSigAlgo> for &SignatureAlgorithm {
+impl From<CertSigAlgo> for &'static SignatureAlgorithm {
     fn from(algo: CertSigAlgo) -> Self {
         match algo {
-            CertSigAlgo::EcDsa => &PKCS_ECDSA_P384_SHA384,
+            CertSigAlgo::EcDsa => &PKCS_ECDSA_P256_SHA256,
             CertSigAlgo::ED25519 => &PKCS_ED25519,
         }
     }
