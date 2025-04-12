@@ -1,3 +1,4 @@
 [default.extend-words]
-ba = "ba"
-referer = "referer"
+
+[files]
+extend-exclude = ["CHANGELOG.md"]
